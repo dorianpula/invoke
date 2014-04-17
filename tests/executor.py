@@ -101,3 +101,35 @@ class Executor_(Spec):
 
         def with_post_tasks(self):
             skip()
+
+
+    class resolves_and_executes_recursive_dependencies:
+        def resolves_recursive_dependencies(self):
+            skip()
+            task1 = Task(Mock())
+            task2 = Task(Mock(), pre=['task1'])
+            task3 = Task(Mock(), pre=['task2'])
+            coll = Collection()
+            coll.add_task(task1, name='task1')
+            coll.add_task(task2, name='task2')
+            coll.add_task(task3, name='task3')
+            executor = Executor(collection=coll, context=Context())
+            executor.execute('task3')
+            eq_(task3.body.call_count, 1)
+            eq_(task2.body.call_count, 1)
+            eq_(task1.body.call_count, 1)
+
+        def skips_cyclic_dependencies(self):
+            skip()
+            task1 = Task(Mock(), pre=['task2'])
+            task2 = Task(Mock(), pre=['task1'])
+            task3 = Task(Mock(), pre=['task2'])
+            coll = Collection()
+            coll.add_task(task1, name='task1')
+            coll.add_task(task2, name='task2')
+            coll.add_task(task3, name='task3')
+            executor = Executor(collection=coll, context=Context())
+            executor.execute('task3')
+            eq_(task3.body.call_count, 1)
+            eq_(task2.body.call_count, 1)
+            eq_(task1.body.call_count, 1)
